@@ -15,12 +15,11 @@
 
 namespace vle {
 
-static constexpr ssize_t INCOMPLETE = -1;  // input too short to contain a complete encoded value
-static constexpr ssize_t DUMMY = -2;       // the first bytes represent the dummy value
+static constexpr ssize_t INCOMPLETE = 0;  // input too short to contain a complete encoded value
 
 template<typename IT> struct Result {  // return type of the functions that decode byte sequences
   IT n;        // decoded value (meaningful only when len > 0)
-  ssize_t len; // number of bytes consumed on success (> 0), or INCOMPLETE/DUMMY on error
+  ssize_t len; // number of bytes consumed on success (> 0), INCOMPLETE (0), or negative for dummy (-len = bytes consumed)
 };
 
 namespace vle_private {  // private stuff, not part of the public api
@@ -53,7 +52,7 @@ template<typename IT, typename BIter> inline Result<IT> Decode(BIter start, BIte
     if (++p >= end) return Result<IT>{IT{}, INCOMPLETE};
     n = (n << 7) | (IT) (*p & 0x7f);
   }
-  return Result<IT>{n, (ssize_t)(p - start + 1)};
+  return Result<IT>{n, (ssize_t) (p - start + 1)};
 }
 
 }  // namespace vle_private
@@ -98,13 +97,12 @@ template<typename IT, class BVec=std::vector<std::uint8_t>> inline std::size_t E
 }
 
 // decodes the sequence of bytes between two iterators as a signed integer
-// Result.len is the number of bytes consumed (> 0), INCOMPLETE, or DUMMY
 template<typename IT, typename BIter> inline Result<IT> DecodeSigned(BIter start, BIter end) {
   if (start >= end) return Result<IT>{IT{}, INCOMPLETE};
   if (*start == 0x80) {
     const BIter next = start + 1;
     if (next >= end) return Result<IT>{IT{}, INCOMPLETE};
-    if (*next == 0x00) return Result<IT>{IT{}, DUMMY};
+    if (*next == 0x00) return Result<IT>{IT{}, -2};
   }
   if ((*start & 0x40) == 0) {
     return vle_private::Decode(start, end, (IT) (*start & 0x3f));
@@ -116,11 +114,10 @@ template<typename IT, typename BIter> inline Result<IT> DecodeSigned(BIter start
 }
 
 // decodes the sequence of bytes between two iterators as an unsigned integer
-// Result.len is the number of bytes consumed (> 0), INCOMPLETE, or DUMMY
 template<typename IT, typename BIter> inline Result<IT> DecodeUnsigned(BIter start, BIter end) {
   if (start >= end) return Result<IT>{IT{}, INCOMPLETE};
   if (*start != DUMMY_UNSIGNED) return vle_private::Decode(start, end, (IT) (*start & 0x7f));
-  return Result<IT>{IT{}, DUMMY};
+  return Result<IT>{IT{}, -1};
 }
 
 // appends the encoded representation of an integer n to the bytes container v

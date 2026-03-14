@@ -68,7 +68,12 @@ std::size_t n = vle::EncodeSigned(-12345, vle::LargeEnoughBuf(buf));
 Decode functions take a pair of `start`/`end` pointers (or iterators).
 They return a `vle::Result<T>` with two fields:
 
-- `len`: bytes consumed (`> 0`), or `vle::INCOMPLETE` / `vle::DUMMY`
+- `len`:
+  - `> 0`: success — number of bytes consumed
+  - `== 0` (`vle::INCOMPLETE`): the encoded value spans beyond the end iterator.
+    Supply more bytes and retry.
+  - `< 0`: dummy/sentinel value ("no value") was decoded. `-len` is the
+    number of bytes consumed (1 for unsigned dummy, 2 for signed dummy).
 - `n`: the decoded value (valid only when `len > 0`)
 
 ```cpp
@@ -81,11 +86,11 @@ vle::EncodeSigned(300, &buf);
 
 vle::Result<int> r = vle::DecodeSigned<int>(buf.data(), buf.data() + buf.size());
 if (r.len > 0) {
-    // r.n == 300
+    // r.n == 300, r.len bytes consumed
 } else if (r.len == vle::INCOMPLETE) {
     // need more bytes
-} else if (r.len == vle::DUMMY) {
-    // dummy / sentinel value
+} else {
+    // dummy value, -r.len bytes consumed
 }
 ```
 
@@ -97,7 +102,7 @@ const std::uint8_t* end = p + buf.size();
 
 while (p < end) {
     auto r = vle::DecodeUnsigned<std::uint64_t>(p, end);
-    if (r.len <= 0) break;  // INCOMPLETE or DUMMY
+    if (r.len <= 0) break;  // INCOMPLETE or dummy
     process(r.n);
     p += r.len;
 }

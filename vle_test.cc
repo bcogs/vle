@@ -276,7 +276,7 @@ Test(DecodeUnsigned, multi_byte) {
 
 Test(DecodeUnsigned, incomplete_empty) {
   auto dr = vle::DecodeUnsigned<unsigned>((std::uint8_t*)nullptr, (std::uint8_t*)nullptr);
-  cr_assert_eq(dr.len, vle::INCOMPLETE);
+  cr_assert_eq(dr.len, 0);
 }
 
 
@@ -284,7 +284,7 @@ Test(DecodeUnsigned, dummy) {
   Bytes v;
   vle::EncodeDummyUnsigned(&v);
   auto dr = vle::DecodeUnsigned<unsigned>(v.data(), v.data() + v.size());
-  cr_assert_eq(dr.len, vle::DUMMY);
+  cr_assert_eq(dr.len, -1);
 }
 
 // --- DecodeSigned tests ---
@@ -318,7 +318,7 @@ Test(DecodeSigned, negative) {
 
 Test(DecodeSigned, incomplete_empty) {
   auto dr = vle::DecodeSigned<int>((std::uint8_t*)nullptr, (std::uint8_t*)nullptr);
-  cr_assert_eq(dr.len, vle::INCOMPLETE);
+  cr_assert_eq(dr.len, 0);
 }
 
 
@@ -326,7 +326,7 @@ Test(DecodeSigned, dummy) {
   Bytes v;
   vle::EncodeDummySigned(&v);
   auto dr = vle::DecodeSigned<int>(v.data(), v.data() + v.size());
-  cr_assert_eq(dr.len, vle::DUMMY);
+  cr_assert_eq(dr.len, -2);
 }
 
 // --- Roundtrip: all uint8_t values ---
@@ -345,7 +345,7 @@ Test(Roundtrip, all_uint8) {
       "roundtrip mismatch for uint8 value %d", i);
     for (std::size_t len = v.size() - 1; len > 0; --len) {
       auto tr = vle::DecodeUnsigned<std::uint8_t>(v.data(), v.data() + len);
-      cr_assert_eq(tr.len, vle::INCOMPLETE,
+      cr_assert_eq(tr.len, 0,
         "expected INCOMPLETE for uint8 value %d truncated to %zu bytes", i, len);
     }
   }
@@ -367,7 +367,7 @@ Test(Roundtrip, all_uint16) {
       "roundtrip mismatch for uint16 value %d", i);
     for (std::size_t len = v.size() - 1; len > 0; --len) {
       auto tr = vle::DecodeUnsigned<std::uint16_t>(v.data(), v.data() + len);
-      cr_assert_eq(tr.len, vle::INCOMPLETE,
+      cr_assert_eq(tr.len, 0,
         "expected INCOMPLETE for uint16 value %d truncated to %zu bytes", i, len);
     }
   }
@@ -390,7 +390,7 @@ Test(Roundtrip, all_int8) {
       "roundtrip mismatch for int8 value %d", i);
     for (std::size_t len = v.size() - 1; len > 0; --len) {
       auto tr = vle::DecodeSigned<std::int8_t>(v.data(), v.data() + len);
-      cr_assert_eq(tr.len, vle::INCOMPLETE,
+      cr_assert_eq(tr.len, 0,
         "expected INCOMPLETE for int8 value %d truncated to %zu bytes", i, len);
     }
   }
@@ -413,7 +413,7 @@ Test(Roundtrip, all_int16) {
       "roundtrip mismatch for int16 value %d", i);
     for (std::size_t len = v.size() - 1; len > 0; --len) {
       auto tr = vle::DecodeSigned<std::int16_t>(v.data(), v.data() + len);
-      cr_assert_eq(tr.len, vle::INCOMPLETE,
+      cr_assert_eq(tr.len, 0,
         "expected INCOMPLETE for int16 value %d truncated to %zu bytes", i, len);
     }
   }
@@ -462,28 +462,28 @@ Test(DummyRoundtrip, unsigned_dummy_decode) {
   Bytes v;
   vle::EncodeDummyUnsigned(&v);
   auto dr = vle::DecodeUnsigned<std::uint64_t>(v.data(), v.data() + v.size());
-  cr_assert_eq(dr.len, vle::DUMMY);
+  cr_assert_eq(dr.len, -1);
 }
 
 Test(DummyRoundtrip, signed_dummy_decode) {
   Bytes v;
   vle::EncodeDummySigned(&v);
   auto dr = vle::DecodeSigned<std::int64_t>(v.data(), v.data() + v.size());
-  cr_assert_eq(dr.len, vle::DUMMY);
+  cr_assert_eq(dr.len, -2);
 }
 
 Test(DummyRoundtrip, signed_dummy_decode_int8) {
   Bytes v;
   vle::EncodeDummySigned(&v);
   auto dr = vle::DecodeSigned<std::int8_t>(v.data(), v.data() + v.size());
-  cr_assert_eq(dr.len, vle::DUMMY);
+  cr_assert_eq(dr.len, -2);
 }
 
 Test(DummyRoundtrip, signed_dummy_decode_intmax) {
   Bytes v;
   vle::EncodeDummySigned(&v);
   auto dr = vle::DecodeSigned<std::intmax_t>(v.data(), v.data() + v.size());
-  cr_assert_eq(dr.len, vle::DUMMY);
+  cr_assert_eq(dr.len, -2);
 }
 
 // --- Encode (auto-dispatch) tests ---
@@ -627,7 +627,7 @@ Test(LargeEnoughBuf, by_value_dummy_unsigned) {
   std::size_t sz = vle::EncodeDummyUnsigned(vle::LargeEnoughBuf(buf));
   cr_assert_eq(sz, 1);
   auto dr = vle::DecodeUnsigned<unsigned>(buf, buf + sz);
-  cr_assert_eq(dr.len, vle::DUMMY);
+  cr_assert_eq(dr.len, -1);
 }
 
 Test(LargeEnoughBuf, by_value_dummy_signed) {
@@ -635,5 +635,5 @@ Test(LargeEnoughBuf, by_value_dummy_signed) {
   std::size_t sz = vle::EncodeDummySigned(vle::LargeEnoughBuf(buf));
   cr_assert_eq(sz, 2);
   auto dr = vle::DecodeSigned<int>(buf, buf + sz);
-  cr_assert_eq(dr.len, vle::DUMMY);
+  cr_assert_eq(dr.len, -2);
 }
