@@ -2,14 +2,15 @@
 #define VLE_H__
 
 // Variable length encoding (un-)marshaling.
-// See README.md for the format description.
+// See README.md for the format description and usage doc.
 
 #if __cplusplus < 201103L
 #error "This header requires at least C++11"
 #endif
 
-#include <cstdint>
 #include <sys/types.h>
+
+#include <cstdint>
 #include <type_traits>
 #include <vector>
 
